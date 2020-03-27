@@ -32,6 +32,7 @@
   - 하나의 비싱글턴 빈과 두개의 싱글턴 빈을 생성
   - 하나는 수정자 하나는 메서드 주입 
 
+#### 3.5.4.1.1 객체도 xml 설정도 xml
 > com.apress.prospring5.ch3.methodInjection.Sigger.java
 ``` java
 // 하나의 비싱글턴 빈
@@ -105,7 +106,7 @@ public abstract class AbstractLookupDemoBean implements DemoBean {
 > rsc.main.resources.spring.methodInjection.app-context-xml.xml
 
 ``` xml
-<!-- singer 빈 구성 -->
+<!-- singer 빈 구성 scope="prototype" 비싱글턴 구현 -->
 <bean id="singer" class="com.apress.prospring5.ch3.methodInjection.Singer" scope="prototype"/>
 
 <!-- AbstractLookupDemoBean 빈 구성 -->
@@ -179,5 +180,306 @@ public class LookupDemo {
 	}
 }
 ```
+#### 3.5.4.1.2 객체는 어노테이션 설정은 xml
 
-### 3.5.4.2 메서드 대체
+> com.apress.prospring5.ch3.methodInjection.annotated.Singer.java
+
+``` java
+// Singer 클래스
+@Component("singer")
+// 프로토타입 스코프는 컨테이너에게 빈을 요청할 때마다 매번 새로운 오브젝트를 생성해준다
+@Scope("prototype")
+public class Singer {
+
+	private String lyric = "I played a quick game of chess with the salt and pepper shaker";
+
+    public void sing() {
+    	
+    }
+}
+```
+
+> com.apress.prospring5.ch3.methodInjection.annotated.AbstractLookupDemoBean.java
+
+``` java
+// Singer 클래스
+@Component("abstractLookupBean")
+public class AbstractLookupDemoBean implements DemoBean {
+    
+	@Lookup("singer")
+	public Singer getMySinger() {
+		return null; // 동적으로 오버라이드 됨
+	};
+
+    
+    @Override
+    public void doSomething() {
+        getMySinger().sing();
+    }
+}
+```
+
+> com.apress.prospring5.ch3.methodInjection.annotated.AbstractLookupDemoBean.java
+
+``` java
+// StandardLookupDomeBean 클래스
+// 빈으로 만들기 위해 선언 standardLookupBean
+@Component("standardLookupBean")
+public class StandardLookupDomeBean implements DemoBean {
+
+	private Singer mySinger;
+	
+    //자동빈 생성
+	@Autowired
+    // Qualifier 해당객체만 찾음
+	@Qualifier("singer")
+	public void setMySinger(Singer mySinger) {
+		this.mySinger = mySinger;
+	}
+
+	@Override
+	public Singer getMySinger() {
+		return this.mySinger;
+	}
+
+	@Override
+	public void doSomething() {
+		mySinger.sing();
+	}
+}
+```
+
+> rsc.main.resources.spring.methodInjection.annotated.app-context-annotated.xml
+
+``` xml
+
+<context:component-scan 
+	base-package="com.apress.prospring5.ch3.methodInjection.annotated" />
+```
+
+> com.apress.prospring5.ch3.methodInjection.annotated.AbstractLookupDemoBean.java
+
+``` java
+public class LookupDemo {
+
+	public static void main(String... args) {
+		GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
+		ctx.load("spring/methodInjection/app-context-annotated.xml");
+		ctx.refresh();
+
+		DemoBean abstractBean = ctx.getBean("abstractLookupBean", DemoBean.class);
+		DemoBean standardBean = ctx.getBean("standardLookupBean", DemoBean.class);
+
+		displayInfo("abstractLookupBean", abstractBean);
+		displayInfo("standardLookupBean", standardBean);
+
+		ctx.close();
+	}
+
+	public static void displayInfo(String beanName, DemoBean bean) {
+		Singer singer1 = bean.getMySinger();
+		Singer singer2 = bean.getMySinger();
+
+		System.out.println("[" + beanName + "]: Singer 인스턴스는 같은가? "
+				+ (singer1 == singer2));
+
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start("lookupDemo");
+
+		for (int x = 0; x < 100000; x++) {
+			Singer singer = bean.getMySinger();
+			singer.sing();
+		}
+
+		stopWatch.stop();
+		System.out.println("100000번을 얻어오는 데 걸린 시간: " + stopWatch.getTotalTimeMillis() + " ms");
+	}
+}
+```
+#### 3.5.4.1.2 객체는 어노테이션 설정은 자바
+
+> com.apress.prospring5.ch3.methodInjection.config.LookupConfig.java
+> 
+``` java
+//설정 클래스 생성시 
+@Configuration
+//컴포넌드 스캔
+@ComponentScan(basePackages = {"com.apress.prospring5.ch3.methodInjection.annotated"})
+public class LookupConfig {
+	
+}
+```
+> com.apress.prospring5.ch3.methodInjection.config.LookupDemo.java
+``` java
+public class LookupDemo {
+
+	public static void main(String... args) {
+		GenericApplicationContext ctx =
+				new AnnotationConfigApplicationContext(LookupConfig.class);
+		
+
+		DemoBean abstractBean = ctx.getBean("abstractLookupBean", DemoBean.class);
+		DemoBean standardBean = ctx.getBean("standardLookupBean", DemoBean.class);
+
+		displayInfo("abstractLookupBean", abstractBean); // 추상 클래스로 통해 비 싱글턴으로 생
+		displayInfo("standardLookupBean", standardBean); // 싱글턴으로 생성 
+
+		ctx.close();
+	}
+
+	public static void displayInfo(String beanName, DemoBean bean) {
+		Singer singer1 = bean.getMySinger();
+		Singer singer2 = bean.getMySinger();
+
+		System.out.println("[" + beanName + "]: Singer 인스턴스는 같은가? "
+				+ (singer1 == singer2));
+
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start("lookupDemo");
+
+		for (int x = 0; x < 100000; x++) {
+			Singer singer = bean.getMySinger();
+			singer.sing();
+		}
+
+		stopWatch.stop();
+		System.out.println("100000번을 얻어오는 데 걸린 시간: " + stopWatch.getTotalTimeMillis() + " ms");
+	}
+}
+
+```
+
+### 3.5.4.2 결론
+
+- 불필요한 룩업 메서드 주입은 성능 이슈 발생  
+- 서로 다른 라이프 사이클을 가진 빈의 경우에 이용 
+  
+### 3.5.4.3 메서드 대체
+
+- 빈 클래스의 서브 클래스를  동적으로 생성해서 메서드 대체
+- 코드 생성 라이브러리로서(Code Generator Library) 런타임에 동적으로 자바 클래스의 대리자를 생성해주는 기능
+- CGLIB를 사용 MethodReplacer 인터페이스를 구현한 다른 빈에 대한 호출로 리다이렉션(바꿔서 출력함)
+
+> com.apress.prospring5.ch3.methodReplacement.ReplacementTarget.java
+> 
+``` java
+public class ReplacementTarget {
+    // 해당 메서드를 대체
+    public String formatMessage(String msg) {
+        return "<h1>" + msg + "</h1>"; 
+    }
+
+    public String formatMessage(Object msg) {
+        return "<h1>" + msg + "</h1>"; 
+    }
+}
+```
+
+> com.apress.prospring5.ch3.methodReplacement.FormatMessageReplacer.java
+> 
+``` java
+public class FormatMessageReplacer implements MethodReplacer {
+
+    // MethodReplacer에서 Override된 메서드
+	@Override
+    //인자 1. 호출된 메서드를 가진 빈
+    //    2. Method 인스턴스
+    //    3. 메서드에 전달된 인수의 배열
+    //반환 재수행된 동일한 타입과 호환 
+	public Object reimplement(Object arg0, Method method, Object[] args)
+			throws Throwable {
+		if (isFormatMessageMethod(method)) {
+			String msg = (String) args[0];
+			return "<h2>" + msg + "</h2>";
+		} else {
+			throw new IllegalArgumentException("Unable to reimplement method "
+					+ method.getName());
+		}
+	}
+
+    // 매서드의 인자가 스트링인지 확인
+	private boolean isFormatMessageMethod(Method method) {
+		// 인자의 길이
+        if (method.getParameterTypes().length != 1) {
+			return false;
+		}
+        // 메서드 이름이 formatMessage
+		if (!("formatMessage".equals(method.getName()))) {
+			return false;
+		}
+        // getReturnType 가 String 아니면
+		if (method.getReturnType() != String.class) {
+			return false;
+		}
+        
+		if (method.getParameterTypes()[0] != String.class) {
+			return false;
+		}
+		return true;
+	}
+}
+```
+
+> rsc.main.resources.spring.methodReplacement.app-context-xml.xml
+
+``` xml
+<!-- FormatMessageReplacer 주입 -->
+<bean id="methodReplacer"
+	class="com.apress.prospring5.ch3.methodReplacement.FormatMessageReplacer">
+</bean>
+<!-- replaced-method 태그는 formatMessage 매서드를 대체 -->
+<!-- replacer 속성은 대채할 메서드 빈의 이름 FormatMessageReplacer -->
+<bean id="replacementTarget"
+	class="com.apress.prospring5.ch3.methodReplacement.ReplacementTarget">
+    <replaced-method name="formatMessage"
+    replacer="methodReplacer">
+        <!-- 매서드를 대체할 타입 정의 -->
+        <arg-type>String</arg-type>
+    </replaced-method>
+</bean>
+<!-- ReplacementTarget 주입 -->	
+<bean id="standardTarget"
+	class="com.apress.prospring5.ch3.methodReplacement.ReplacementTarget">
+</bean>
+```
+
+> com.apress.prospring5.ch3.methodReplacement.MethodReplacementDemo.java
+> 
+``` java
+public class MethodReplacementDemo {
+    public static void main(String... args) {
+        GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
+        ctx.load("classpath:spring/methodReplacement/app-context-xml.xml");
+        ctx.refresh();
+
+        ReplacementTarget replacementTarget = (ReplacementTarget) ctx
+                .getBean("replacementTarget");
+        ReplacementTarget standardTarget = (ReplacementTarget) ctx
+                .getBean("standardTarget");
+
+        displayInfo(replacementTarget);
+        displayInfo(standardTarget);
+
+        ctx.close();
+    }
+
+    private static void displayInfo(ReplacementTarget target) {
+        System.out.println(target.formatMessage("Thanks for playing, try again!"));
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("perfTest");
+
+        for (int x = 0; x < 1000000; x++) {
+            String out = target.formatMessage("No filter in my head");
+            // 콘솔을 오염시키지 않으려고 주석 처리함
+            //System.out.println(out);
+        }
+
+        stopWatch.stop();
+
+        System.out.println("1000000번 수행 시 걸린 시간: "
+                + stopWatch.getTotalTimeMillis() + " ms");
+    } 
+}
+```
+
