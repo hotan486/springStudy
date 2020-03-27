@@ -471,8 +471,7 @@ public class MethodReplacementDemo {
 
         for (int x = 0; x < 1000000; x++) {
             String out = target.formatMessage("No filter in my head");
-            // 콘솔을 오염시키지 않으려고 주석 처리함
-            //System.out.println(out);
+       
         }
 
         stopWatch.stop();
@@ -483,3 +482,9 @@ public class MethodReplacementDemo {
 }
 ```
 
+### 3.5.4.4 메서드 대체를 사용하는 이유 
+
+- 동일 타입의 단일 빈에 특정 메서드만 대처 하려는 경우 
+- 표준 자바 메커니즘을 사용하는 것이 더 효율적
+  
+## 3.5.5 빈 명명 규칙 이해하기
