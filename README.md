@@ -488,3 +488,66 @@ public class MethodReplacementDemo {
 - 표준 자바 메커니즘을 사용하는 것이 더 효율적
   
 ## 3.5.5 빈 명명 규칙 이해하기
+
+- 아이디나 이름 명시하지 않으면 인덱싱
+
+> rsc.main.resources.spring.beanAliases.app-context-01.xml
+
+``` xml
+<bean id="methodReplacer"
+	class="com.apress.prospring5.ch3.methodReplacement.FormatMessageReplacer">
+</bean>
+<bean id="string1" class="java.lang.String"/>
+<bean name="string2" class="java.lang.String"/>
+<bean class="java.lang.String"/>
+<bean class="java.lang.String"/>
+```
+> 결과
+``` java
+string1
+string2
+java.lang.String#0
+java.lang.String#1
+```
+## 3.5.5.1 빈 이름 별칭 짓기
+
+- 아래와 같이 별칭을 지을 수 있고 해당 벌칭 사용시 모두 같다. 싱글턴
+> rsc.main.resources.spring.beanAliases.app-context-02.xml
+``` xml
+<bean id="john" name="jon johnny,jonathan;jim" class="java.lang.String"/>
+<alias name="john" alias="ion"/>
+```
+> rsc.main.resources.spring.beanAliases.app-context-03.xml
+``` xml
+<bean id="jon johnny,jonathan;jim" class="java.lang.String"/>
+<bean name="jon johnny,jonathan;jim" class="java.lang.String"/>
+```
+> 결과
+``` java
+id: jon johnny,jonathan;jim
+ 별칭: []
+
+id: jon
+ 별칭: [jonathan, jim, johnny]
+```
+- id 값에 다 넣으면 그 전체가 아이디가 된다.(나머지 별칭)
+- id 없이 이름만 넣으면 name 중 처음이 아이디가 된다.
+
+## 3.5.5.2 어노테이션 구성을 이용한 빈 명명 규칙
+
+- 어노테이션 사용시 빈의 이름 미설정시 해당 클래스명
+``` java
+@Component
+```
+- 이름 사용시 그 이름으로 설정됨
+``` java
+@Component("johnMayer")
+```
+- 이름 여러개 사용시 name 중 처음이 아이디가 된다.
+``` java
+@Bean(name={"jon johnny,jonathan;jim"})
+```
+
+- AliasFor 는 빈 속성에 대한 별칭을 정의 한다
+  
+  
