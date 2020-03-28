@@ -550,4 +550,114 @@ id: jon
 
 - AliasFor 는 빈 속성에 대한 별칭을 정의 한다
   
+## 3.5.5.3 빈 생성 방식 이해하기
+
+- 스프링의 빈은 모두 일반적으로 싱글턴
+- 단일 인스턴스를 유지하며 의존 객체는 동일한 인스턴스를 사용
+- 싱글턴에 대한 자바의 두가지 개념
+	
+	- 싱글턴 
+	- 싱글턴 패턴 
+
+> 결과
+``` java
+public class Singleton {
+    private static Singleton instance;
+
+    static {
+        instance = new Singleton(); 
+    }
+
+    public static Singleton getInstance() {
+        return instance; 
+    }
+
+    private Singleton(){
+    
+    }
+}
+
+// 결합도 증가 
+// 싱글턴 패턴보다 스프링에서 사용하는 프로토 타입을 사용
+// scope="prototype"
+// @Scope("prototype")
+```
+
+
+
+- 결합도 : https://lazineer.tistory.com/93
+
+#### 3.5.6.1 인스턴스 생성 방식 선택하기 
+
+- 싱글턴 빈이 기본 방식 
+
+  - 생태가 없는 공유 객체 :
+
+  	- 상태가 없으면 동기화할 이유가 없어 의존 객체가 자신의 로직 처리를 의해 어떤 빈을 사용할때마다 새 인스턴스를 생성할 필요가 없음 
+  - 읽기 전용 상태를 갖는 공유 객체 : 
+  	- 읽기 전용 상태도 동기화가 필요하지 않으므로 빈을 요청 할떄마다 인스턴스를 생성하면 불필요한 오버해드만 늘어남
+  - 공유 상태를 갖는 공유 객체 : 
+  	- 공유 되어야 하는 빈이 있는 경우 싱글턴이 이상적인 선택입니다
+  - 쓰기 가능 상태를 갖는 대용량 처리(High-throughput) 객체 :
+      - 많아 사용되는 빈의 있다면 싱글턴을 유지 하고, 모든 쓰기 접근을 빈 상태에 동기화하면 수백 개의 인스턴스를 끊임없이 생성하는 것 보다 나은 성능을 얻을 수 있다. 
+- 비 싱글턴 방식 
+ 
+	- 쓰기 가능한 상태를 갖는 객체 : 
+
+		- 빈이 쓰기가 가능한 상태르 많이 가진다면 의존 객체의 각 요청을 처리하는 데 새로운 인터턴스 보다 동기화 비용이 더 많이 들어 가는지 고려 해야 한다.
+	- private 상태를 갖는 오브젝트 : 
+
+		- 일부의 의존 객체는 private 상태를 가진 빈을 사용해 빈에 위존하는 다른 객체와는 별도로 자신만의 처리 작업릏 할떄 비싱글턴
+#### 3.5.6.2 빈 스코프 구현하기
+
+- 스프링에서 지원 하는 빈 스코프
+
+    - 싱글턴(Singleton) : 기본 싱글턴 하나의 객체만 생성
+    - 프로토타입(Prototype) : 애플리케이션 요청마다 스프링 인스턴스 생성
+    - 요청(Request) : 웹에서 모든 http 요청이 있을떄 마다 생성되고 요청 처리가 완료되면 소멸
+    - 세션(Session) : 웹에서 모든 http 세션이 있을떄 마다 생성되고 세션 처리가 완료되면 소멸  
+	- 글로벌 세션(Global Session) : 모든 포틀릿간에 공유
+	- 스레드(Thread) : 새로운 스레드 생성시 새로운 인스턴스 생성
+	- 사용자 정의(Custom) : 사용자 정의 스코프를 등록해 생성
   
+### 3.5.7 의존성 해석하기
+
+> rsc.main.resources.spring.beanAutowiring.app-context-01.xml
+``` xml
+<!-- gopher보다 먼저 주입 그 경우 -->
+<bean id="johnMayer" class="com.apress.prospring5.ch3.beanAutowiring.annotated.Singer" depends-on="gopher"/>
+<!--  -->
+<bean id="gopher" class="com.apress.prospring5.ch3.beanAutowiring.annotated.Guitar"/>
+```
+
+> com.apress.prospring5.ch3.beanAutowiring.Singer.java
+> 
+``` java
+
+@DependsOn("gopher")
+	//중요한건 gopher 생성되기전에 Singer 먼저
+	//그 경우 gopher가 없으므로 null
+	//depends-on="gopher" 처리 
+	private Guitar guitar;
+
+```
+
+
+
+## 3.6 빈에 자동와이어링하기
+
+- byName : 같은 이름의 프로퍼티를 찾아 출력 
+
+- byType : 동일한 타입 대상을 출력
+
+- Constructor(생성자) : 인자에 따라 대상을 출력 
+  
+- default : 타입 방식 , 인자 존재시 생성자 방식
+  
+- no : 기본
+
+### 3.6.1 자동와이어링을 사용하는 경우
+
+## 3.7 빈 상속 설정하기
+
+## 3.8 정리
