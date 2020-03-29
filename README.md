@@ -636,13 +636,12 @@ public class Singleton {
 
 @DependsOn("gopher")
 	//중요한건 gopher 생성되기전에 Singer 먼저
-	//그 경우 gopher가 없으므로 null
 	//depends-on="gopher" 처리 
 	private Guitar guitar;
 
 ```
 
-
+- ApplicationContext 바로 사용하면 null 로 ApplicationContextAware 인터페이스 필요 
 
 ## 3.6 빈에 자동와이어링하기
 
@@ -656,8 +655,22 @@ public class Singleton {
   
 - no : 기본
 
+- lazy-init = true -> 처음 요청시 빈 인스턴스를 생성 
+- byName -> 이름이 같은 fooOne
+- byType -> 모든 대상 
+- @Lazy 처음 접근시 인스턴스가 생성되 빈을 정의   
+
 ### 3.6.1 자동와이어링을 사용하는 경우
 
+- 자동와이어링은 시간을 절약해 주지만
+- 중요 부분에섯 남용을 막아야 한다 .
+- 
 ## 3.7 빈 상속 설정하기
 
-## 3.8 정리
+``` xml
+<bean id="parent" class="com.apress.prospring5.ch3.beanInheritance.Singer"
+        p:name="John Mayer" p:age="39" />
+    
+<bean id="child" class="com.apress.prospring5.ch3.beanInheritance.Singer"
+        parent="parent" p:age="0"/>
+```
